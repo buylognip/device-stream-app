@@ -112,7 +112,6 @@ const PHONE_HTML =
   "<div id='authorized-card'><div style='padding: 12px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; margin-bottom: 16px; color: #10b981; font-weight: 600;'>🟢 Authorized & Connected!</div>" +
   "<div style='display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;'>" +
   "<button id='btn-start-screen' class='btn-primary' style='width: 100%; padding: 14px; font-size: 0.95rem;' onclick='startScreenShare()'>📱 Mirror Phone Screen</button>" +
-  "<button id='btn-start-cam' class='btn-primary' style='width: 100%; padding: 14px; font-size: 0.95rem; background: linear-gradient(135deg, #a855f7, #6366f1);' onclick='startCameraMirror()'>📷 Mirror Camera Stream</button>" +
   "<button id='btn-stop' style='display: none; width: 100%; padding: 14px; background: #ef4444; color: #fff; border: none; border-radius: 10px; font-weight: 600;' onclick='stopScreenCapture()'>⏹️ Stop Mirroring</button>" +
   "</div>" +
   "<canvas id='preview' style='display: none; width: 100%; margin-top: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);'></canvas></div>" +
@@ -123,10 +122,9 @@ const PHONE_HTML =
   "const deviceId = getDeviceId(), deviceName = /android/i.test(navigator.userAgent) ? 'Android Device' : /iPhone|iPad/i.test(navigator.userAgent) ? 'Apple iOS' : 'Mobile Phone';" +
   "document.getElementById('device-name-tag').innerText = 'ID: ' + deviceId + ' | ' + deviceName;" +
   "function initWS() { const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'; ws = new WebSocket(protocol + '//' + window.location.host); ws.binaryType = 'arraybuffer'; ws.onopen = () => { document.getElementById('phone-status-dot').className = 'status-dot online'; document.getElementById('phone-status-text').innerText = 'Connected'; ws.send(JSON.stringify({ type: 'phone_connect', deviceId: deviceId, deviceName: deviceName, token: localStorage.getItem('device_token') })); }; ws.onmessage = (event) => { const data = JSON.parse(event.data); if (data.type === 'pairing_required') { document.getElementById('pairing-card').style.display = 'block'; document.getElementById('authorized-card').style.display = 'none'; document.getElementById('display-pairing-code').innerText = data.pairingCode; } else if (data.type === 'auth_success') { if (data.token) localStorage.setItem('device_token', data.token); document.getElementById('pairing-card').style.display = 'none'; document.getElementById('authorized-card').style.display = 'block'; } }; ws.onclose = () => setTimeout(initWS, 3000); }" +
-  "async function startScreenShare() { try { mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false }); startStreamingWithMedia(); } catch (e) { try { mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); startStreamingWithMedia(); } catch (err2) { mediaStream = await navigator.mediaDevices.getUserMedia({ video: true }); startStreamingWithMedia(); } } }" +
-  "async function startCameraMirror() { try { mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); startStreamingWithMedia(); } catch (e) { mediaStream = await navigator.mediaDevices.getUserMedia({ video: true }); startStreamingWithMedia(); } }" +
-  "function startStreamingWithMedia() { document.getElementById('btn-start-screen').style.display = 'none'; document.getElementById('btn-start-cam').style.display = 'none'; document.getElementById('btn-stop').style.display = 'block'; const canvas = document.getElementById('preview'), ctx = canvas.getContext('2d'); canvas.style.display = 'block'; const v = document.createElement('video'); v.srcObject = mediaStream; v.play(); v.onended = () => stopScreenCapture(); captureInterval = setInterval(() => { if (v.readyState !== v.HAVE_ENOUGH_DATA) return; canvas.width = v.videoWidth * 0.75; canvas.height = v.videoHeight * 0.75; ctx.drawImage(v, 0, 0, canvas.width, canvas.height); canvas.toBlob((b) => { if (b && ws && ws.readyState === 1) b.arrayBuffer().then(buf => ws.send(buf)); }, 'image/jpeg', 0.7); }, 33); }" +
-  "function stopScreenCapture() { if (captureInterval) clearInterval(captureInterval); if (mediaStream) mediaStream.getTracks().forEach(t => t.stop()); document.getElementById('btn-start-screen').style.display = 'block'; document.getElementById('btn-start-cam').style.display = 'block'; document.getElementById('btn-stop').style.display = 'none'; }" +
+  "async function startScreenShare() { try { mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }); startStreamingWithMedia(); } catch (e) { document.getElementById('action-toast').innerText = 'Please tap Desktop Site in Chrome menu if screen prompt does not appear.'; } }" +
+  "function startStreamingWithMedia() { document.getElementById('btn-start-screen').style.display = 'none'; document.getElementById('btn-stop').style.display = 'block'; const canvas = document.getElementById('preview'), ctx = canvas.getContext('2d'); canvas.style.display = 'block'; const v = document.createElement('video'); v.srcObject = mediaStream; v.play(); v.onended = () => stopScreenCapture(); captureInterval = setInterval(() => { if (v.readyState !== v.HAVE_ENOUGH_DATA) return; canvas.width = v.videoWidth * 0.75; canvas.height = v.videoHeight * 0.75; ctx.drawImage(v, 0, 0, canvas.width, canvas.height); canvas.toBlob((b) => { if (b && ws && ws.readyState === 1) b.arrayBuffer().then(buf => ws.send(buf)); }, 'image/jpeg', 0.7); }, 33); }" +
+  "function stopScreenCapture() { if (captureInterval) clearInterval(captureInterval); if (mediaStream) mediaStream.getTracks().forEach(t => t.stop()); document.getElementById('btn-start-screen').style.display = 'block'; document.getElementById('btn-stop').style.display = 'none'; }" +
   "window.addEventListener('DOMContentLoaded', initWS);" +
   "</script></body></html>";
 
@@ -139,7 +137,7 @@ function loadAuthorizedDevices() {
   try { if (fs.existsSync(AUTH_FILE)) authorizedDevices = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8')); } catch (err) {}
 }
 function saveAuthorizedDevices() {
-  try { fs.writeFileSync(AUTH_FILE, JSON.stringify(authorizedDevices, null, 2), 'utf8'); } catch (err) {}
+  try { if (fs.existsSync(AUTH_FILE)) authorizedDevices = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8')); } catch (err) {}
 }
 loadAuthorizedDevices();
 
@@ -261,5 +259,5 @@ function broadcastToPCsBinary(deviceId, binaryData) {
 }
 
 server.listen(PORT, () => {
-  console.log(`🚀 AUTO FALLBACK ZERO ALERT MIRROR RUNNING ON PORT ${PORT}`);
+  console.log(`🚀 PURE REAL SCREEN MIRRORING RUNNING ON PORT ${PORT}`);
 });
