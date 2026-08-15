@@ -1,0 +1,13 @@
+{
+  "name": "device-stream-app",
+  "version": "2.0.0",
+  "description": "DeviceStream Pro v2.0 - Real-time Screen Streaming and PC Remote Control with Dual Auth Modes and Live Diagnostics",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.17.0"
+  }
+}

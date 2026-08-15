@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  devicestream:
+    build: .
+    container_name: devicestream_app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - REQUIRE_PAIRING_CODE=false
+    volumes:
+      - ./authorized_devices.json:/app/authorized_devices.json
+    restart: always

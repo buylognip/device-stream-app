@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeviceStream Pro - Self-Hosted PC Controller</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📱</text></svg>">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">📱</div>
+      <div>
+        <div class="brand-title">DeviceStream Pro</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Self-Hosted PC Controller & Screen Mirror</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <!-- Zero-Code Instant Connect Toggle Button -->
+      <button id="toggle-zero-code-btn" class="connection-pill" style="cursor: pointer; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: var(--success-color); font-weight: 600;" onclick="toggleZeroCodeMode()">
+        ⚡ Zero-Code Auto-Connect: ON
+      </button>
+
+      <button class="btn-primary" onclick="openPairingModal()">
+        <span>+ Pair / Connect Link</span>
+      </button>
+      
+      <div class="connection-pill">
+        <span id="server-status-dot" class="status-dot connecting"></span>
+        <span id="server-status-text">Connecting to Server...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <div class="dashboard-container">
+    
+    <!-- LEFT SIDEBAR: AUTHORIZED DEVICES -->
+    <div class="sidebar-panel">
+      <div class="glass-panel panel-section" style="flex: 1;">
+        <div class="panel-header">
+          <span class="panel-title">Connected Devices</span>
+          <button style="background: none; border: none; color: var(--accent-color); cursor: pointer; font-size: 0.8rem;" onclick="refreshDevices()">🔄 Refresh</button>
+        </div>
+
+        <div id="device-list-container">
+          <div style="text-align: center; color: var(--text-muted); padding: 30px 10px; font-size: 0.9rem;">
+            Loading devices...
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; padding: 14px; background: rgba(16, 185, 129, 0.08); border-radius: var(--radius-md); border: 1px dashed rgba(16, 185, 129, 0.3);">
+          <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; color: var(--success-color);">⚡ Zero-Code Mode Active</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+            No PIN authorization codes required! Phones opening your site automatically connect and register as ready to stream.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER VIEWPORT: LIVE STREAM & REMOTE CONTROL -->
+    <div class="glass-panel viewport-container">
+      
+      <div id="screen-wrapper" class="screen-wrapper" style="display: none;">
+        <canvas id="stream-canvas" class="stream-canvas" tabindex="0"></canvas>
+      </div>
+
+      <div id="stream-placeholder" class="stream-placeholder">
+        <div class="icon">📲</div>
+        <h3 style="font-size: 1.3rem; color: var(--text-main);">No Mobile Stream Active</h3>
+        <p style="max-width: 400px; font-size: 0.9rem; line-height: 1.5;">
+          Open your website link on your phone to connect instantly without entering any code.
+        </p>
+        <button class="btn-primary" style="margin-top: 10px;" onclick="openPairingModal()">
+          View Phone Stream URL
+        </button>
+      </div>
+
+      <!-- FLOATING REMOTE CONTROL TOOLBAR -->
+      <div id="remote-toolbar" class="remote-toolbar" style="display: none;">
+        <button class="tool-btn" title="Back (ESC)" onclick="sendRemoteButton('back')">◀️</button>
+        <button class="tool-btn" title="Home (Home Key)" onclick="sendRemoteButton('home')">🏠</button>
+        <button class="tool-btn" title="Recents / App Switcher" onclick="sendRemoteButton('recents')">⏹️</button>
+        <button class="tool-btn" title="Power / Lock Screen" onclick="sendRemoteButton('lock')">🔒</button>
+        <button class="tool-btn" title="Volume Up" onclick="sendRemoteButton('volume_up')">🔊</button>
+        <button class="tool-btn" title="Volume Down" onclick="sendRemoteButton('volume_down')">🔉</button>
+        <button class="tool-btn" title="Take Screenshot" onclick="sendRemoteButton('screenshot')">📸</button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDEBAR: CONTROLS & DIAGNOSTICS -->
+    <div class="sidebar-panel sidebar-right">
+      <!-- Quick Clipboard & Text Input -->
+      <div class="glass-panel panel-section">
+        <div class="panel-header">
+          <span class="panel-title">Keyboard & Clipboard</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <input type="text" id="clipboard-input" placeholder="Type text to send to phone..." style="width: 100%; padding: 10px 14px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: #fff;">
+          <button class="btn-primary" style="width: 100%; font-size: 0.85rem;" onclick="sendClipboardText()">
+            ⚡ Send Text to Phone
+          </button>
+        </div>
+      </div>
+
+      <!-- Stream Quality & Controls -->
+      <div class="glass-panel panel-section">
+        <div class="panel-header">
+          <span class="panel-title">Stream Settings</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Frame Quality</label>
+            <select id="quality-select" style="width: 100%; padding: 8px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: #fff;" onchange="updateStreamQuality()">
+              <option value="high">HD (High Quality)</option>
+              <option value="medium" selected>Balanced (Standard)</option>
+              <option value="low">Low Latency (Fast)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">FPS Limit</label>
+            <select id="fps-select" style="width: 100%; padding: 8px 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; color: #fff;" onchange="updateStreamQuality()">
+              <option value="60">60 FPS (Ultra Smooth)</option>
+              <option value="30" selected>30 FPS (Standard)</option>
+              <option value="15">15 FPS (Battery Saver)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-time Diagnostics -->
+      <div class="glass-panel panel-section">
+        <div class="panel-header">
+          <span class="panel-title">Live Diagnostics</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Active Device</span>
+          <span class="stat-value" id="diag-device-name">None</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Live FPS</span>
+          <span class="stat-value" id="diag-fps">0 FPS</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Hosting Mode</span>
+          <span class="stat-value">Self-Hosted Site</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Authorization</span>
+          <span class="stat-value" id="diag-auth-mode">Zero-Code Instant</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Resolution</span>
+          <span class="stat-value" id="diag-resolution">N/A</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAIRING / CONNECTION MODAL -->
+  <div id="pairing-modal" class="modal-overlay">
+    <div class="glass-panel modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 1.15rem;">Mobile Connection Link</h3>
+        <button style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;" onclick="closePairingModal()">×</button>
+      </div>
+
+      <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+        <b>🌐 Open this Link on your Phone (No Code Required):</b><br>
+        <code id="phone-url-display" style="background: rgba(0,0,0,0.4); padding: 8px 12px; border-radius: 6px; color: var(--success-color); font-weight: 600; display: block; margin-top: 6px; word-break: break-all;">http://loading...</code>
+        <button class="btn-primary" style="margin-top: 8px; width: 100%; font-size: 0.85rem;" onclick="copyPhoneUrl()">📋 Copy Phone Stream Link</button>
+      </div>
+
+      <div id="pending-pairing-alerts"></div>
+    </div>
+  </div>
+
+  <script src="js/pc_controller.js"></script>
+  <script src="pc_controller.js"></script>
+</body>
+</html>
