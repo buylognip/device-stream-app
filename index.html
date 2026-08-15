@@ -52,9 +52,10 @@
     .btn-primary:hover { background: linear-gradient(135deg, #4f46e5, #4338ca); box-shadow: 0 0 18px var(--accent-glow); }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
     .modal-overlay.open { opacity: 1; pointer-events: auto; }
-    .modal-content { width: 100%; max-width: 460px; padding: 30px; }
+    .modal-content { width: 100%; max-width: 460px; padding: 30px; text-align: center; }
     .pin-inputs { display: flex; gap: 8px; justify-content: center; margin: 16px 0; }
     .pin-digit { width: 44px; height: 52px; font-size: 22px; text-align: center; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 10px; color: #fff; font-weight: 700; }
+    .qr-box { background: #fff; padding: 12px; border-radius: 16px; display: inline-block; margin: 12px 0; box-shadow: 0 0 25px rgba(99, 102, 241, 0.4); }
     .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.88rem; }
     .stat-label { color: var(--text-muted); }
     .stat-value { font-weight: 600; color: var(--accent-color); }
@@ -71,7 +72,7 @@
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button id="toggle-mode-btn" class="connection-pill" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #10b981;" onclick="toggleAuthMode()">⚡ Mode: Zero-Code Instant</button>
-      <button class="btn-primary" onclick="openPairingModal()">+ Connect Link / PIN</button>
+      <button class="btn-primary" onclick="openPairingModal()">📷 Scan QR / Connect Link</button>
       <div class="connection-pill">
         <span id="server-status-dot" class="status-dot connecting"></span>
         <span id="server-status-text">Connecting...</span>
@@ -90,8 +91,8 @@
           <div style="text-align: center; color: #94a3b8; padding: 30px 10px; font-size: 0.9rem;">Loading devices...</div>
         </div>
         <div id="mode-info-box" style="margin-top: 20px; padding: 14px; background: rgba(16, 185, 129, 0.08); border-radius: 12px; border: 1px dashed rgba(16, 185, 129, 0.3);">
-          <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; color: #10b981;" id="mode-info-title">⚡ Zero-Code Instant Active</div>
-          <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.4;" id="mode-info-desc">Phones connect instantly without typing any PIN code! Tap header button to switch mode.</div>
+          <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; color: #10b981;" id="mode-info-title">⚡ Zero-Code QR Scan Active</div>
+          <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.4;" id="mode-info-desc">Scan the QR Code on PC with your Phone Camera to connect instantly with 1 scan!</div>
         </div>
       </div>
     </div>
@@ -103,8 +104,8 @@
       <div id="stream-placeholder" class="stream-placeholder">
         <div style="font-size: 58px; color: #6366f1;">📲</div>
         <h3 style="font-size: 1.35rem; color: #fff;">No Mobile Stream Active</h3>
-        <p style="max-width: 420px; font-size: 0.9rem;">Open your website URL on your mobile phone to connect live.</p>
-        <button class="btn-primary" style="margin-top: 10px;" onclick="openPairingModal()">View Mobile Connection Link</button>
+        <p style="max-width: 420px; font-size: 0.9rem;">Scan QR Code or open link on your mobile phone to connect live.</p>
+        <button class="btn-primary" style="margin-top: 10px;" onclick="openPairingModal()">📷 Open QR Code Scanner</button>
       </div>
       <div id="remote-toolbar" class="remote-toolbar" style="display: none;">
         <button class="tool-btn" title="Back" onclick="sendRemoteButton('back')">◀️</button>
@@ -150,17 +151,17 @@
 
   <div id="pairing-modal" class="modal-overlay">
     <div class="glass-panel modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3>Mobile Device Connection Link</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3>📷 Instant QR Code Scan</h3>
         <button style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="closePairingModal()">×</button>
       </div>
-      <div style="font-size: 0.88rem; color: #94a3b8; margin-bottom: 16px;">
-        <b>🌐 Open this Link on your Mobile Phone:</b>
-        <code id="phone-url-display" style="background: rgba(0,0,0,0.4); padding: 8px 12px; border-radius: 6px; color: #10b981; font-weight: 600; display: block; margin-top: 6px; word-break: break-all;">http://loading...</code>
-        <button class="btn-primary" style="margin-top: 8px; width: 100%; font-size: 0.85rem;" onclick="copyPhoneUrl()">📋 Copy Link to Send</button>
-      </div>
-      <div style="text-align: center; margin: 16px 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
-        <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;">- Or Enter 6-Digit PIN Code (PIN Security Mode) -</div>
+      <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px;"><b>Scan this QR Code with your Phone Camera:</b></div>
+      <div class="qr-box"><img id="qr-image-display" src="" alt="Scan QR Code" style="width: 200px; height: 200px; display: block; border-radius: 8px;"></div>
+      <div style="font-size: 0.82rem; color: #10b981; font-weight: 600; margin-bottom: 12px;">⚡ 1 Scan Auto-Connects Your Phone Live</div>
+      <code id="phone-url-display" style="background: rgba(0,0,0,0.4); padding: 8px 12px; border-radius: 6px; color: #10b981; font-weight: 600; display: block; margin-bottom: 8px; word-break: break-all;">http://loading...</code>
+      <button class="btn-primary" style="width: 100%; font-size: 0.85rem;" onclick="copyPhoneUrl()">📋 Copy Link Instead</button>
+      <div style="text-align: center; margin: 16px 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px;">
+        <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 8px;">- Or Enter 6-Digit PIN Code (PIN Security Mode) -</div>
         <div class="pin-inputs">
           <input type="text" class="pin-digit" maxlength="1" onkeyup="handlePinInput(this, 0)">
           <input type="text" class="pin-digit" maxlength="1" onkeyup="handlePinInput(this, 1)">
@@ -169,7 +170,7 @@
           <input type="text" class="pin-digit" maxlength="1" onkeyup="handlePinInput(this, 4)">
           <input type="text" class="pin-digit" maxlength="1" onkeyup="handlePinInput(this, 5)">
         </div>
-        <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="submitPairingCode()">Authorize via PIN Code</button>
+        <button class="btn-primary" style="width: 100%; margin-top: 8px;" onclick="submitPairingCode()">Authorize via PIN Code</button>
       </div>
       <div id="pending-pairing-alerts"></div>
     </div>
@@ -187,7 +188,9 @@
         document.getElementById('server-status-dot').className = 'status-dot online';
         document.getElementById('server-status-text').innerText = 'Connected';
         ws.send(JSON.stringify({ type: 'register_pc' }));
-        document.getElementById('phone-url-display').innerText = window.location.protocol + '//' + window.location.host + '/phone.html';
+        const phoneUrl = window.location.protocol + '//' + window.location.host + '/phone.html';
+        document.getElementById('phone-url-display').innerText = phoneUrl;
+        document.getElementById('qr-image-display').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(phoneUrl);
         refreshDevices();
       };
       ws.onmessage = (event) => {
